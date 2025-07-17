@@ -4,7 +4,8 @@ from bs4 import BeautifulSoup
 from urllib.parse import urljoin
 from dotenv import load_dotenv
 import time
-import csv  # Importação para CSV
+import pandas as pd  # Usando pandas para salvar
+from typing import List, Dict
 
 class LinkedInScraperRequests:
     BASE_URL = "https://www.linkedin.com"
@@ -17,7 +18,7 @@ class LinkedInScraperRequests:
         self.email = email
         self.password = password
         self.session.headers.update({
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+            "User-Agent": "Mozilla/5.0",
             "Accept-Language": "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7",
         })
 
@@ -58,7 +59,7 @@ class LinkedInScraperRequests:
         resp.raise_for_status()
         return resp.text
 
-    def parse_connections(self, html):
+    def parse_connections(self, html) -> List[Dict]:
         soup = BeautifulSoup(html, "html.parser")
         connection_blocks = soup.select('div[data-view-name="connections-list"] > div')
         connections = []
@@ -95,20 +96,13 @@ def run_etl():
     html = scraper.get_connections_html()
     connections = scraper.parse_connections(html)
 
-    # Salvar em CSV
-    csv_file = "connections.csv"
-    with open(csv_file, mode='w', newline='', encoding='utf-8') as f:
-        fieldnames = ['name', 'occupation', 'profile_url', 'connected_on', 'profile_image']
-        writer = csv.DictWriter(f, fieldnames=fieldnames)
-        writer.writeheader()
-        for conn in connections:
-            writer.writerow(conn)
+    # Salvar em CSV com pandas
+    df = pd.DataFrame(connections)
+    df.to_csv("connections.csv", index=False, encoding="utf-8")
+    print("Conexões salvas no arquivo connections.csv")
 
-    print(f"Conexões salvas no arquivo {csv_file}")
-
-    # Também opcional: printar na tela
-    for conn in connections:
-        print(conn)
+    # Printar na tela
+    print(df)
 
 if __name__ == "__main__":
     run_etl()
