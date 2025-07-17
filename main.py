@@ -55,7 +55,7 @@ class LinkedInScraperRequests:
     
     def get_connections_html(self):
         resp = self.session.get(self.CONNECTIONS_URL)
-        time.sleep(3)
+        time.sleep(4)
         resp.raise_for_status()
         return resp.text
 
