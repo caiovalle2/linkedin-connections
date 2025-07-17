@@ -4,6 +4,7 @@ from bs4 import BeautifulSoup
 from urllib.parse import urljoin
 from dotenv import load_dotenv
 import time
+import csv  # Importação para CSV
 
 class LinkedInScraperRequests:
     BASE_URL = "https://www.linkedin.com"
@@ -35,31 +36,25 @@ class LinkedInScraperRequests:
         return data
 
     def login(self):
-        # GET para pegar o formulário e cookies
         resp = self.session.get(self.LOGIN_URL)
         resp.raise_for_status()
 
-        # Extrai campos hidden do formulário
         form_data = self._get_login_form_data(resp.text)
 
-        # Atualiza com usuário e senha
         form_data["session_key"] = self.email
         form_data["session_password"] = self.password
 
-        # POST para enviar login
         post_resp = self.session.post(self.LOGIN_SUBMIT_URL, data=form_data)
         post_resp.raise_for_status()
 
-        # Verifica se login foi bem sucedido
         if "feed" not in post_resp.url and "checkpoint" not in post_resp.url:
             raise Exception("Login falhou, verifique as credenciais ou se há CAPTCHA.")
 
         print("Login realizado com sucesso.")
     
     def get_connections_html(self):
-        # Pega a página de conexões autenticado
         resp = self.session.get(self.CONNECTIONS_URL)
-        time.sleep(2)
+        time.sleep(3)
         resp.raise_for_status()
         return resp.text
 
@@ -89,6 +84,7 @@ class LinkedInScraperRequests:
                 continue
         return connections
 
+
 def run_etl():
     load_dotenv()
     email = os.getenv("LINKEDIN_USER")
@@ -99,8 +95,18 @@ def run_etl():
     html = scraper.get_connections_html()
     connections = scraper.parse_connections(html)
 
-    # Aqui você pode adicionar o parse do HTML para extrair conexões
+    # Salvar em CSV
+    csv_file = "connections.csv"
+    with open(csv_file, mode='w', newline='', encoding='utf-8') as f:
+        fieldnames = ['name', 'occupation', 'profile_url', 'connected_on', 'profile_image']
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        writer.writeheader()
+        for conn in connections:
+            writer.writerow(conn)
 
+    print(f"Conexões salvas no arquivo {csv_file}")
+
+    # Também opcional: printar na tela
     for conn in connections:
         print(conn)
 
