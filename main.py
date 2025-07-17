@@ -110,6 +110,5 @@ def run_etl():
     for conn in connections:
         print(conn)
 
-
 if __name__ == "__main__":
     run_etl()
